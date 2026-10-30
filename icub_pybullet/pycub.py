@@ -936,6 +936,17 @@ class pyCub(BulletClient):
                 return joint
         raise ValueError(f"Joint {joint_name} not found!")
 
+    def get_object_id(self, object_name: str) -> Optional[int]:
+        """Return the PyBullet ID of a configured object by its scene name."""
+        # other_objects entries are: (id, name, fixed, color, path)
+        for object_id, name, _fixed, _color, _path in self.other_objects:
+            if name == object_name:
+                print(f"Found object ID: {object_id}")
+                return object_id
+
+        print(f"Object '{object_name}' not found in other_objects.")
+        return None
+
     def find_link_id(self, mesh_name: str, robot: Optional[int] = None, urdf_name: Optional[str] = "robot") -> int:
         """
         Help function to find link id from mesh name

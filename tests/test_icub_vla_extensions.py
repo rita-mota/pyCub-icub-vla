@@ -37,6 +37,26 @@ class JointHandleTests(unittest.TestCase):
             pyCub.get_joint_handle(self.client, "missing_joint")
 
 
+class ObjectLookupTests(unittest.TestCase):
+    def setUp(self):
+        self.client = type(
+            "Client",
+            (),
+            {
+                "other_objects": [
+                    (7, "bottle", False, None, "bottle.urdf"),
+                    (9, "computer", True, None, "computer.urdf"),
+                ]
+            },
+        )()
+
+    def test_returns_matching_object_id(self):
+        self.assertEqual(pyCub.get_object_id(self.client, "computer"), 9)
+
+    def test_unknown_object_returns_none(self):
+        self.assertIsNone(pyCub.get_object_id(self.client, "missing"))
+
+
 class FixedCameraTests(unittest.TestCase):
     def test_pose_update_preserves_numeric_values(self):
         camera = object.__new__(Visualizer.FixedCameraWindow)
