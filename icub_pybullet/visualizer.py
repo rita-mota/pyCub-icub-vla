@@ -76,9 +76,9 @@ class Visualizer:
         self.file_menu.add_item("RGB image", 0)
         self.file_menu.add_item("depth image", 1)
         menu_counter = 2
-        for eye in ["l_eye", "r_eye"]:
+        for camera in ["l_eye", "r_eye", "fixed_camera"]:
             for image_type in ["RGB", "RGB_D"]:
-                self.file_menu.add_item(f"{eye} {image_type} image", menu_counter)
+                self.file_menu.add_item(f"{camera} {image_type} image", menu_counter)
                 self.file_menu.set_enabled(menu_counter, False)
                 menu_counter += 1
         self.menu.add_menu("Save", self.file_menu)
@@ -86,24 +86,27 @@ class Visualizer:
         self.show_menu = gui.Menu()
         self.show_menu.add_item("l_eye", menu_counter)
         self.show_menu.add_item("r_eye", menu_counter + 1)
+        self.show_menu.add_item("fixed_camera", menu_counter + 2)
 
         self.menu.add_menu("Show", self.show_menu)
 
-        self.file_menu.add_item("Stream l_eye to file", menu_counter + 2)
-        self.file_menu.set_enabled(menu_counter + 2, False)
-        self.file_menu.add_item("Stream r_eye to file", menu_counter + 3)
+        self.file_menu.add_item("Stream l_eye to file", menu_counter + 3)
         self.file_menu.set_enabled(menu_counter + 3, False)
+        self.file_menu.add_item("Stream r_eye to file", menu_counter + 4)
+        self.file_menu.set_enabled(menu_counter + 4, False)
+        self.file_menu.add_item("Stream fixed_camera to file", menu_counter + 5)
+        self.file_menu.set_enabled(menu_counter + 5, False)
 
         show_callbacks = []
-        for menu_id in range(menu_counter + 4):
-            c = self.MenuCallback(menu_id, self)
-            if menu_id in [6, 7]:
-                show_callbacks.append(c)
-            self.window.set_on_menu_item_activated(menu_id, c)
+        for menu_id in range(menu_counter + 6):
+            callback = self.MenuCallback(menu_id, self)
+            if menu_id in [8, 9, 10]:
+                show_callbacks.append(callback)
+            self.window.set_on_menu_item_activated(menu_id, callback)
 
-        self.show_menu.add_item("Coordination Frame", menu_counter+4)
-        show_callbacks.append(self.MenuCallback(menu_counter+4, self))
-        self.window.set_on_menu_item_activated(menu_counter+4, show_callbacks[-1])
+        self.show_menu.add_item("Coordination Frame", menu_counter + 6)
+        show_callbacks.append(self.MenuCallback(menu_counter + 6, self))
+        self.window.set_on_menu_item_activated(menu_counter + 6, show_callbacks[-1])
 
         self.window.add_child(self.scene)
 
@@ -144,6 +147,9 @@ class Visualizer:
             show_callbacks[0]()
         if self.client.config.eyes.r_eye:
             show_callbacks[1]()
+        camera_config = getattr(self.client.config, "camera", None)
+        if getattr(camera_config, "fixed_camera", False):
+            show_callbacks[2]()
 
         # Open new tab (or new window) of default browser with the web gui
         if self.client.config.gui.web:
@@ -218,7 +224,7 @@ class Visualizer:
             self.vis.set_geometry_transform(f_path, self._R @ R_urdf)
             for ew in self.eye_windows.values():
                 ew.vis.set_geometry_transform(f_path, self._R @ R_urdf)
-                if ew.link_name in f_path:
+                if ew.link_name is not None and ew.link_name in f_path:
                     R_ = self._R @ R_urdf
                     ew.center = (R_ @ np.hstack((self.meshes[f_path].get_center(), 1)))[:3]
                     R_[:3, 3] = [0, 0, 0]
@@ -312,7 +318,10 @@ class Visualizer:
 
         self.window.post_redraw()
         for ew in self.eye_windows.values():
-            ew.scene.look_at(ew.center + ew.dir, ew.center, [0, 0, 1])
+            if ew.link_name is None:
+                ew.update_view()
+            else:
+                ew.scene.look_at(ew.center + ew.dir, ew.center, [0, 0, 1])
             ew.window.post_redraw()
             ew.get_image()
             ew.get_depth_image()
@@ -346,7 +355,7 @@ class Visualizer:
 
             """
 
-            if self.id > 5:
+            if self.id > 7:
                 self.parent.menu.set_checked(self.id, not self.parent.menu.is_checked(self.id))
             if self.id == 0:
                 self.parent.vis.scene.render_to_image(lambda im: self.save_image(im, 0))
@@ -360,18 +369,25 @@ class Visualizer:
                 self.parent.eye_windows["r_eye"].vis.scene.render_to_image(lambda im: self.save_image(im, 0))
             elif self.id == 5:
                 self.parent.eye_windows["r_eye"].vis.scene.render_to_depth_image(lambda im: self.save_image(im, 1))
-            elif self.id in [6, 7]:
-                eye = "l_eye" if self.id == 6 else "r_eye"
-
-                # When already opened -> close
+            elif self.id == 6:
+                self.parent.eye_windows["fixed_camera"].vis.scene.render_to_image(lambda im: self.save_image(im, 0))
+            elif self.id == 7:
+                self.parent.eye_windows["fixed_camera"].vis.scene.render_to_depth_image(lambda im: self.save_image(im, 1))
+            elif self.id in [8, 9]:
+                eye = "l_eye" if self.id == 8 else "r_eye"
                 if eye in self.parent.eye_windows:
                     self.parent.eye_windows[eye].window.close()
                 else:
                     self.parent.EyeWindow(eye, self.parent)
-            elif self.id in [8, 9]:
-                eye = "l_eye" if self.id == 8 else "r_eye"
-                self.parent.eye_windows[eye].save_images_bool = not self.parent.eye_windows[eye].save_images_bool
             elif self.id == 10:
+                if "fixed_camera" in self.parent.eye_windows:
+                    self.parent.eye_windows["fixed_camera"].window.close()
+                else:
+                    self.parent.FixedCameraWindow(self.parent)
+            elif self.id in [11, 12, 13]:
+                eye = "l_eye" if self.id == 11 else "r_eye" if self.id == 12 else "fixed_camera"
+                self.parent.eye_windows[eye].save_images_bool = not self.parent.eye_windows[eye].save_images_bool
+            elif self.id == 14:
                 if self.parent.menu.is_checked(self.id):
                     self.parent.vis.add_geometry("coordination_frame", o3d.geometry.TriangleMesh.create_coordinate_frame(size=1), self.parent.mat)
                 else:
@@ -583,6 +599,97 @@ class Visualizer:
             """
 
             self.last_depth_image = im
+
+        def unproject(self, u, v, d):
+            return self.vis.camera.unproject(u, v, d, self.window.size.width, self.window.size.height)
+
+    class FixedCameraWindow:
+        """Open3D window for a configurable camera fixed in the world frame."""
+
+        MENU_IDS = [6, 7, 13]
+
+        def __init__(self, parent: Visualizer) -> None:
+            self.parent = parent
+            self.eye = "fixed_camera"
+            self.link_name = None
+
+            self.window = self.parent.gui.create_window(self.eye, 294, 294)
+            self.window.set_on_close(self.on_close)
+
+            self.scene = gui.SceneWidget()
+            self.scene.set_on_mouse(self.on_mouse)
+            self.scene.scene = rendering.Open3DScene(self.window.renderer)
+            self.vis = self.scene.scene
+            self.scene.background_color = o3d.visualization.gui.Color(1, 1, 1, 1)
+            self.vis.set_background([1, 1, 1, 1])
+            self.vis.set_lighting(self.vis.NO_SHADOWS, [0, 0, 0])
+            self.window.show_menu(False)
+            self.window.add_child(self.scene)
+
+            camera_config = getattr(self.parent.client.config, "camera", None)
+            self.eye_pos = np.asarray(
+                getattr(camera_config, "fixed_camera_pos", [-0.5731, -0.0218, 0.4800]),
+                dtype=float,
+            )
+            self.eye_target = np.asarray(
+                getattr(camera_config, "fixed_camera_target", [-0.2265, -0.0107, -0.4580]),
+                dtype=float,
+            )
+            self.up_vector = np.asarray(
+                getattr(camera_config, "fixed_camera_up", [0.9379, -0.0212, 0.3463]),
+                dtype=float,
+            )
+
+            self.img_counter = 0
+            self.save_images_bool = False
+            self.last_image = None
+            self.last_depth_image = None
+
+            for menu_id in self.MENU_IDS:
+                self.parent.file_menu.set_enabled(menu_id, True)
+
+            for mesh_name, mesh in self.parent.meshes.items():
+                self.vis.add_geometry(mesh_name, geometry=mesh, material=self.parent.mat)
+                transform = self.parent.vis.get_geometry_transform(mesh_name)
+                self.vis.set_geometry_transform(mesh_name, transform)
+
+            self.parent.eye_windows[self.eye] = self
+
+        def set_camera_pose(self, pos: list, target: list) -> None:
+            """Update the fixed camera position and look-at target."""
+            self.eye_pos = np.asarray(pos, dtype=float)
+            self.eye_target = np.asarray(target, dtype=float)
+
+        def update_view(self) -> None:
+            self.scene.look_at(self.eye_target, self.eye_pos, self.up_vector)
+
+        def on_close(self) -> bool:
+            for menu_id in self.MENU_IDS:
+                self.parent.file_menu.set_enabled(menu_id, False)
+            del self.parent.eye_windows[self.eye]
+            return True
+
+        def on_mouse(self, event: gui.MouseEvent) -> int:
+            return self.scene.EventCallbackResult.CONSUMED
+
+        def get_image(self) -> None:
+            self.vis.scene.render_to_image(self.save_image)
+
+        def get_depth_image(self) -> None:
+            self.vis.scene.render_to_depth_image(self.save_depth_image)
+
+        def save_images(self) -> None:
+            path = os.path.join(self.parent.file_dir, "..", "images", self.eye, "RGB")
+            os.makedirs(path, exist_ok=True)
+            path = os.path.join(path, f"{self.img_counter}.png")
+            self.img_counter += 1
+            o3d.io.write_image(path, self.last_image)
+
+        def save_image(self, image: o3d.geometry.Image) -> None:
+            self.last_image = image
+
+        def save_depth_image(self, image: o3d.geometry.Image) -> None:
+            self.last_depth_image = image
 
         def unproject(self, u, v, d):
             return self.vis.camera.unproject(u, v, d, self.window.size.width, self.window.size.height)

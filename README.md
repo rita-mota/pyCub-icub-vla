@@ -3,6 +3,26 @@ pyCub is iCub humanoid robot simulator written in Python. It uses PyBullet for s
 
 [![iCub Robot](docs/documentation/images/icub.png)](https://rustlluk.github.io/pycub)
 
+## iCub VLA dataset-generation fork
+
+This fork contains the minimal pyCub extensions used for the iCub manipulation
+dataset-generation pipeline developed by Rita Alexandra da Costa Mota during a
+master's thesis in Electrical and Computer Engineering at Instituto Superior
+Tecnico (IST), Portugal.
+
+Relative to upstream pyCub, this fork adds:
+
+- joint lookup by name through `pyCub.get_joint_handle()`;
+- an optional configurable camera fixed in the world frame;
+- the lightweight manipulation-object assets required by the five supported
+  smooth task variants.
+
+The fixed camera is configured through the optional `camera` section of a
+pyCub YAML configuration. Existing upstream configurations without that section
+continue to work unchanged. See
+[`ASSET_SOURCES.md`](icub_pybullet/other_meshes/ASSET_SOURCES.md) for asset
+provenance and licensing notes.
+
 ## Installation  
 - Requires python3.10 to 3.12
   - newer python versions are now not supported due to incompatible with some dependencies 

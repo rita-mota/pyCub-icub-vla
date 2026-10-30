@@ -929,6 +929,13 @@ class pyCub(BulletClient):
             if joint_name in [joint.name, joint.joints_id]:
                 return joint.robot_joint_id, joint.joints_id
 
+    def get_joint_handle(self, joint_name: str) -> Joint:
+        """Return the joint metadata object matching joint_name."""
+        for joint in self.joints:
+            if joint.name == joint_name:
+                return joint
+        raise ValueError(f"Joint {joint_name} not found!")
+
     def find_link_id(self, mesh_name: str, robot: Optional[int] = None, urdf_name: Optional[str] = "robot") -> int:
         """
         Help function to find link id from mesh name
