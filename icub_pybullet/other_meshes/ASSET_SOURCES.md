@@ -14,11 +14,18 @@ collision meshes where required.
 | `computer/` | [Computer](https://www.tinkercad.com/things/0dR9j9to1St-computer) |
 | `cube/` | Original cube meshes created by Rita Alexandra da Costa Mota |
 
-The Tinkercad source designs were publicly accessible when retrieved. Their use
-and redistribution remain subject to the applicable Autodesk Tinkercad terms
-and any rights stated by the original creators. They are not relicensed by this
-repository under the pyCub CC BY 4.0 license unless the relevant rights holder
-has authorized that licensing.
+The Tinkercad source designs were publicly shared when retrieved. Section I of
+the [Autodesk Special Service Terms for Tinkercad](https://www.autodesk.com/company/legal-notices-trademarks/terms-of-service-autodesk360-web-services/special-service-terms-for-tinkercad)
+states that publicly shared user content is licensed to other service users on
+a non-exclusive, worldwide, royalty-free, fully paid, perpetual basis to copy,
+display, share, distribute, use, and create derivative works, subject to those
+terms.
+
+The downloaded and adapted meshes remain subject to the applicable Tinkercad
+terms and any additional rights stated by their original creators. They are not
+relicensed by this repository under pyCub's CC BY 4.0 license. The source links
+above are retained for provenance and attribution; downstream users should
+retain this notice and review the current terms before redistribution.
 
 Generated files use the following naming conventions:
 
@@ -30,6 +37,3 @@ Generated files use the following naming conventions:
 The repository stores these lightweight assets because they are necessary to
 reproduce the task scenes. Dataset recordings, rendered images, and videos are
 not included.
-
-If you redistribute these assets, retain this notice and verify the current
-terms at the linked source pages.

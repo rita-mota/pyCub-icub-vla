@@ -13,6 +13,8 @@ Tecnico (IST), Portugal.
 Relative to upstream pyCub, this fork adds:
 
 - joint lookup by name through `pyCub.get_joint_handle()`;
+- configured-scene object lookup through `pyCub.get_object_id()`;
+- the `EndEffector.get_pose()` accessor used by the smooth controllers;
 - an optional configurable camera fixed in the world frame;
 - the lightweight manipulation-object assets required by the five supported
   smooth task variants.
