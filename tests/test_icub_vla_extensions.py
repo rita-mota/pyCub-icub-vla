@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from icub_pybullet.pycub import Joint, pyCub
+from icub_pybullet.pycub import EndEffector, Joint, pyCub
 from icub_pybullet.visualizer import Visualizer
 
 
@@ -55,6 +55,27 @@ class ObjectLookupTests(unittest.TestCase):
 
     def test_unknown_object_returns_none(self):
         self.assertIsNone(pyCub.get_object_id(self.client, "missing"))
+
+
+class EndEffectorPoseTests(unittest.TestCase):
+    def test_get_pose_uses_urdf_link_transform(self):
+        state = [None] * 6
+        state[4] = (1.0, 2.0, 3.0)
+        state[5] = (0.0, 0.0, 0.0, 1.0)
+        client = type(
+            "Client",
+            (),
+            {
+                "robot": 1,
+                "linkInfo": {"URDFPOS": 4, "URDFORI": 5},
+                "getLinkState": lambda self, robot, link: state,
+            },
+        )()
+        end_effector = object.__new__(EndEffector)
+        end_effector.client = client
+        end_effector.link_id = 2
+        self.assertEqual(end_effector.get_pose().pos, [1.0, 2.0, 3.0])
+        self.assertEqual(end_effector.get_pose().ori, [0.0, 0.0, 0.0, 1.0])
 
 
 class FixedCameraTests(unittest.TestCase):

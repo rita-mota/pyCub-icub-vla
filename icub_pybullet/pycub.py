@@ -1103,3 +1103,14 @@ class EndEffector:
         pos = list(state[self.client.linkInfo["URDFPOS"]])
         ori = list(state[self.client.linkInfo["URDFORI"]])
         return Pose(pos, ori)
+
+    def get_pose(self) -> Pose:
+        """Return the current world-frame end-effector pose.
+
+        This preserves the method name used by the thesis data-generation
+        pipeline; it is equivalent to :meth:`get_position`.
+        """
+        state = self.client.getLinkState(self.client.robot, self.link_id)
+        pos = list(state[self.client.linkInfo["URDFPOS"]])
+        ori = list(state[self.client.linkInfo["URDFORI"]])
+        return Pose(pos, ori)
